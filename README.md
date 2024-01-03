@@ -23,8 +23,8 @@ end
 ```
 
 Another thing you can do is provide a desired `opnorm` error for `||K -
-U*V'||`...  but I wouldn't bet the farm that the error control is all that
-guaranteed---greedy deterministic pivoting schemes can be tricked, or at least
+U*V'||`...but I wouldn't bet the farm that the error control is all that
+guaranteed. Greedy deterministic pivoting schemes can be tricked, or at least
 made very inefficient! It does work pretty well in toy applications at least
 though, so it isn't useless.
 ```julia
@@ -34,16 +34,19 @@ for tol in (1e-4, 1e-6, 1e-8, 1e-10, 1e-12, 1e-14)
 end
 ```
 
-If you want something that is completely non-allocating, you can pre-allocate
-a cache. Note that if you also provide a `tol` here, you will terminate early
-but the function won't remove the unused rows. The `rnk` return parameter
-gives you the rank of the approximation, so you should work with 
+If you want something that is completely non-allocating, you can pre-allocate a
+cache. Note that if you also provide a `tol` here, you will terminate early but
+the function won't remove the unused columns in `U` and `V`. The `rnk` return
+parameter gives you the rank of the approximation, so you should work with
 `view(U, :, 1:rnk)`, for example.
 ```julia
 cache    = ACAFact.ACACache(Float64, length(pts1), length(pts2), 50) # max rank 50
 (U, V)   = (zeros(length(pts1), 50), zeros(length(pts2), 50))
 (rnk, _) = ACAFact.aca!(K, U, V, cache=cache) # zero allocations
 ```
+One note here though: this `ACACache` does carry state that gets used in the
+factorizations, so if you want to factorize a new matrix that is the same size
+as `K` with the same cache, be sure to `ACAFact.resetcache!(cache)`.
 
 # Working with arbitrary matrix-like objects
 
