@@ -64,9 +64,9 @@ module ACAFact
   end
 
   """
-  `(rank, z) = aca!(M, U, V, tol=0.0; [kwargs...])`: given an object `M` that implements `ACAFact.{row!, col!}` (see also the docstring for `ACAFact.aca`), compute an ACA factorization `M ≈ U*V'` by in-place modifying `U` and `V`. If tol>0.0, this population may terminate early, _and the unused columns of `U` and `V` are NOT zeroed out_, so you should be sure to look at the `rank` output and zero out the `(rank+1):end` columns of `U` and `V`. The `z` output is an internal quantity that you only need to keep if you intend to resume the factorization later.
+  `(rank, z) = aca!(M, U, V, tol=0.0; [kwargs...])`: given an object `M` that implements `ACAFact.{row!, col!}` (see also the docstring for `ACAFact.aca`), compute an ACA factorization `M ≈ U*V'` by in-place modifying `U` and `V`. If tol>0.0, this population may terminate early, _and the unused columns of `U` and `V` are NOT zeroed out_, so you should be sure to look at the `rank` output and zero out the `(rank+1):end` columns of `U` and `V`. The `rank` output gives you the number of columns used (which may be less than `size(U,2)` if tol > 0`), and the `z` output is an internal quantity that you only need to keep if you intend to resume the factorization later.
 
-  This function is designed to be non-allocating and resumable. In particular, you can allocate bigger `U` and `V` (and other internal use arrays) than you need to achieve a factorization at tolerance `tol1`, and then with careful use of returned values resume the computation to factorize at a higher precision `tol2`.
+  This function is designed to be non-allocating and resumable. In particular, you can allocate bigger `U` and `V` than you need to achieve a factorization at tolerance `tol1`, and then with careful use of returned values resume the computation to factorize at a higher precision `tol2`. See the README and tests for examples.
 
   WARNING: this function does _not_ check compatibility of array dimensions. So if your `U` and `V` are not the right size, you might waste time waiting for that error to occur or simply get incorrect answers.
   """
