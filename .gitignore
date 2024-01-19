@@ -8,7 +8,5 @@
 *.log
 *.jls
 Manifest.toml
-examples/Manifest.toml
-test/Mainfest.toml
 debug*.jl
 dev*.jl
