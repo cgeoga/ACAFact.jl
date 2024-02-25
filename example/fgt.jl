@@ -29,7 +29,7 @@ end
 function aca_fgt(sources::Vector{T}, target_locations::Vector{T}, 
                  values; range=1.0, maxrank=100, tol=eps()) where{T}
   spec = FastGaussSpec(sources, target_locations, range)
-  (U, V) = aca(spec, maxrank, tol=tol)
+  (U, V, err) = aca(spec, maxrank, tol=tol)
   U*(V'*values)
 end
 

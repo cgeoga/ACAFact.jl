@@ -76,6 +76,8 @@ module ACAFact
     (;rbuf, cbuf, rix, cix) = cache
     # imperfect check for bug avoidance:
     check_resume(start, rix, cix, z)
+    # allocate the err float just so it can be returned outside the loop:
+    err = 0.0
     # Now loop over the rest of the rank of U and V and fill in the rows/cols:
     for l in start:size(U,2)
       # get the next row index and put that buffer in place:
@@ -109,15 +111,16 @@ module ACAFact
       for t in 1:(l-1)
         z += 2*abs(dot(view(U, :, t), cbuf))*abs(dot(view(V, :, t), rbuf))
       end
-      z += sum(abs2, cbuf)*sum(abs2, rbuf)
+      z  += sum(abs2, cbuf)*sum(abs2, rbuf)
+      err = sqrt(sum(abs2, cbuf)*sum(abs2, rbuf))/sqrt(z)
       if sqrt(sum(abs2, cbuf)*sum(abs2, rbuf)) < tol*sqrt(z) && l > 1
         eltype(M) <: Complex && conj!(V)
-        return (l, z)
+        return (l, z, err)
       end
     end
     # if M is complex, then conj! the V:
     eltype(M) <: Complex && conj!(V)
-    (size(U,2), z)
+    (size(U,2), z, err)
   end
 
   """
@@ -141,8 +144,8 @@ module ACAFact
     rank = min(rank, sz[1], sz[2])
     U    = Array{eltype(M)}(undef, sz[1], rank)
     V    = Array{eltype(M)}(undef, sz[2], rank)
-    (rank, z) = aca!(M, U, V, tol)
-    (U[:,1:rank], V[:,1:rank])
+    (rank, z, err) = aca!(M, U, V, tol)
+    (U[:,1:rank], V[:,1:rank], err)
   end
 
 end
