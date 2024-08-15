@@ -8,8 +8,9 @@ K    = [exp(-abs2(pj - pk)) for pj in pts1, pk in pts2]
 @testset "out-of-place" begin
   (U1, V1, err1) = aca(K, 50)
   @test opnorm(K - U1*V1') < 1e-14
-  (U2, V2, err2) = aca(K, 50, tol=1e-6)
+  (U2, V2, err2) = aca(K, 1e-6; rankstart=2)
   @test opnorm(K - U2*V2') < 1e-5
+  @test U2 ≈ U1[:,1:size(U2,2)]
 end
 
 @testset "in-place and resume" begin

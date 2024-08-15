@@ -29,7 +29,7 @@ made very inefficient! It does work pretty well in toy applications at least
 though, so it isn't useless.
 ```julia
 for tol in (1e-4, 1e-6, 1e-8, 1e-10, 1e-12, 1e-14)
-  (U, V) = aca(K, 100, tol=tol)
+  (U, V) = aca(K, tol=tol; maxrank=100)
   @show tol, size(U, 2), opnorm(K - U*V')
 end
 ```
@@ -40,9 +40,9 @@ the function won't remove the unused columns in `U` and `V`. The `rnk` return
 parameter gives you the rank of the approximation, so you should work with
 `view(U, :, 1:rnk)`, for example.
 ```julia
-cache    = ACAFact.ACACache(Float64, length(pts1), length(pts2), 50) # max rank 50
-(U, V)   = (zeros(length(pts1), 50), zeros(length(pts2), 50))
-(rnk, _) = ACAFact.aca!(K, U, V, cache=cache) # zero allocations
+cache       = ACAFact.ACACache(Float64, length(pts1), length(pts2), 50) # max rank 50
+(U, V)      = (zeros(length(pts1), 50), zeros(length(pts2), 50))
+(rnk, _, _) = ACAFact.aca!(K, U, V, cache=cache) # zero allocations
 ```
 One note here though: this `ACACache` does carry state that gets used in the
 factorizations, so if you want to factorize a new matrix that is the same size
