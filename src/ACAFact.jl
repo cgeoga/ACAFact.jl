@@ -9,5 +9,7 @@ module ACAFact
 
   include("aca.jl")
 
+  include("kernelmatrix.jl")
+
 end
 

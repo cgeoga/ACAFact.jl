@@ -37,3 +37,12 @@ end
   @test opnorm(K_im - K_im_rec) < 1e-13
 end
 
+@testset "basic kernel matrix" begin
+  Km = ACAFact.kernelmatrix(pts1, pts2, (x,y)->exp(-abs2(x-y)))
+  (U1, V1, err1) = aca(Km, 50)
+  @test opnorm(K - U1*V1') < 1e-14
+  (U2, V2, err2) = aca(Km, 1e-6; rankstart=2)
+  @test opnorm(K - U2*V2') < 1e-5
+  @test U2 ≈ U1[:,1:size(U2,2)]
+end
+

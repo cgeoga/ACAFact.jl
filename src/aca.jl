@@ -30,6 +30,14 @@ function next_pivot(rbuf, used_ixs)
       ix  = j
     end
   end
+  if iszero(ix)
+    @warn "Could not effectively select a pivot, defaulting to next available index." maxlog=1
+    for t in (used_ixs[1]+1):length(rbuf)
+      in(t, used_ixs) && continue
+      (val, ix) = (rbuf[t], t)
+      break
+    end
+  end
   (val, ix)
 end
 

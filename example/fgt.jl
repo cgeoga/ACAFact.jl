@@ -1,35 +1,12 @@
 
 using ACAFact
 
-struct FastGaussSpec{T}
-  sources::Vector{T}
-  target_locations::Vector{T}
-  range::Float64
-end
-
-Base.size(fg::FastGaussSpec{T}) where{T} = (length(fg.sources), length(fg.target_locations))
-Base.eltype(fg::FastGaussSpec{T}) where{T} = Float64
-
-function ACAFact.col!(buf, fg::FastGaussSpec{T}, j::Int) where{T}
-  x = fg.target_locations[j]
-  @inbounds for k in eachindex(fg.sources)
-    buf[k] = exp(-norm(x - fg.sources[k])^2/fg.range)
-  end
-  nothing
-end
-
-function ACAFact.row!(buf, fg::FastGaussSpec{T}, j::Int) where{T}
-  x = fg.sources[j]
-  @inbounds for k in eachindex(fg.target_locations)
-    buf[k] = exp(-norm(x - fg.target_locations[k])^2/fg.range)
-  end
-  nothing
-end
+gauss(x, y, r) = exp(-(norm(x-y)^2)/r)
 
 function aca_fgt(sources::Vector{T}, target_locations::Vector{T}, 
                  values; range=1.0, maxrank=100, tol=eps()) where{T}
-  spec = FastGaussSpec(sources, target_locations, range)
-  (U, V, err) = aca(spec, maxrank, tol=tol)
+  fgt = ACAFact.kernelmatrix(sources, target_locations, (x,y)->gauss(x, y, range))
+  (U, V, err) = aca(fgt, tol)
   U*(V'*values)
 end
 
