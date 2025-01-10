@@ -70,3 +70,18 @@ matrix that aren't selected as pivots. It would be nice if you could also
 implement `Base.size(K::MyCoolObject)`, but if for some reason you don't want to
 you can compute the ACA of `K` with `aca(K, [...], sz=(size_K_1, size_K_2))`.
 
+As an example, `ACAFact.jl` has a non-exported demo struct called a
+`KernelMatrix`. You can look at `./src/kernelmatrix.jl` for a full demonstration
+of creating this abstract interface. The analog to the first usage demo with a
+`ACAFact.KernelMatrix` would look like this:
+```julia
+pts1 = range(0.0, 1.0, length=100)
+pts2 = range(0.0, 1.0, length=110)
+K      = ACAFact.kernelmatrix(pts1, pts2, (x,y)->exp(-abs2(x-y)))
+(U, V) = aca(K, 1e-12, maxrank=100)
+```
+As you can see, nothing really changes...except for the fact that you never have
+to fully assemble a potentially huge matrix. If you knew the rank of your matrix
+was O(1), for example, that would change the runtime of your code from O(n^2) to
+O(n) basically for free. Not bad!
+
