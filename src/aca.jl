@@ -13,6 +13,8 @@ function ACACache(::Type{T}, su, sv, maxrank) where{T}
   ACACache(rbuf, cbuf, ixbuf, copy(ixbuf))
 end
 
+ACACache(M, maxrank) = ACACache(eltype(M), size(M,1), size(M,2), maxrank)
+
 function resetcache!(cache::ACACache{T}) where{T}
   fill!(cache.rbuf, NaN)
   fill!(cache.cbuf, NaN)
@@ -73,7 +75,10 @@ This function is designed to be non-allocating and resumable. In particular, you
 WARNING: this function does _not_ check compatibility of array dimensions. So if your `U` and `V` are not the right size, you might waste time waiting for that error to occur or simply get incorrect answers.
 """
 function aca!(M, U, V, tol=0.0; start=1, z=0.0,
-              cache=ACACache(eltype(U), size(U,1), size(V,1), size(V,2)))
+              cache=ACACache(M, size(V,2)))::Tuple{Int64, Float64, Float64}
+  if eltype(M) != eltype(U) || eltype(M) != eltype(V)
+    throw(error("eltype(M) does not agree with the type of provided buffers!"))
+  end
   # unpack cache struct:
   (;rbuf, cbuf, rix, cix) = cache
   # imperfect check for bug avoidance:
