@@ -3,7 +3,7 @@ module ACAFact
 
   using LinearAlgebra
 
-  export aca
+  export aca, aca!
 
   include("extmatrix.jl")
 

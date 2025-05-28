@@ -25,7 +25,9 @@ yv = sort(rand(6000))
 va = randn(length(yv))
 
 # Timings on my machine (intel 12th gen laptop with power saving CPU governor)
+print("ACA  timing: ")
 @btime aca_fgt($xv, $yv, $va);            # 2 ms,   17 alloc (10 MiB)
+print("Ref. timing: ")
 @btime slowgausstransform($xv, $yv, $va); # 265 ms, 4 alloc, (229 MiB)
 
 @show maximum(abs, aca_fgt(xv, yv, va) - slowgausstransform(xv, yv, va)) # 6e-13

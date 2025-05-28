@@ -68,11 +68,15 @@ function check_resume(start, rix, cix, z)
 end
 
 """
-`(rank, z, err) = aca!(M, U, V, tol=0.0; [kwargs...])`: given an object `M` that implements `ACAFact.{row!, col!}` (see also the docstring for `ACAFact.aca`), compute an ACA factorization `M ≈ U*V'` by in-place modifying `U` and `V`. If tol>0.0, this population may terminate early, _and the unused columns of `U` and `V` are NOT zeroed out_, so you should be sure to look at the `rank` output and zero out the `(rank+1):end` columns of `U` and `V`. The `rank` output gives you the number of columns used (which may be less than `size(U,2)` if tol > 0`), and the `z` output is an internal quantity that you only need to keep if you intend to resume the factorization later.
+`(rank, z, err) = aca!(M, U, V, tol=0.0; [cache=ACACache(M, size(V,2)), kwargs...])`
 
-This function is designed to be non-allocating and resumable. In particular, you can allocate bigger `U` and `V` than you need to achieve a factorization at tolerance `tol1`, and then with careful use of returned values resume the computation to factorize at a higher precision `tol2`. See the README and tests for examples.
+compute an ACA factorization `M ≈ U*V'` by in-place modifying `U` and `V`. If tol>0.0, this population may terminate early, and **the unused columns of `U` and `V` are NOT zeroed out**, so you should be sure to look at the `rank` output and zero out the `(rank+1):end` columns of `U` and `V`. The `rank` output gives you the number of columns used (which may be less than `size(U,2)` if `tol > 0`), and the `z` output is an internal quantity that you only need to keep if you intend to resume the factorization later.
 
-WARNING: this function does _not_ check compatibility of array dimensions. So if your `U` and `V` are not the right size, you might waste time waiting for that error to occur or simply get incorrect answers.
+This function is designed to be non-allocating and resumable: for non-allocating factorizations, you just need to pass in a pre-allocated `ACACache`. But note: **`ACACache` objects are stateful**, and when starting a new factorization (as opposed to resuming an existing one) you should `ACAFact.resetcache!(cache)`. 
+
+For resuming, you can allocate bigger `U` and `V` than you need to achieve a factorization at tolerance `tol1`, and then with careful use of returned values resume the computation to factorize at a higher precision `tol2`. See the source for `aca(M, ::Float64; kwargs...)` and the tests for examples of resuming. 
+
+See also: the docs for `aca` and the README outline the necessary bridge methods for you to write to pass in an arbitrary matrix-like object that gives access to individual rows and columns.
 """
 function aca!(M, U, V, tol=0.0; start=1, z=0.0,
               cache=ACACache(M, size(V,2)))::Tuple{Int64, Float64, Float64}
@@ -131,23 +135,34 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
 end
 
 """
-`aca(M, rank::Int64; [tol=0.0, sz=size(M)])`: takes any object representing a matrix that implements `ACAFact.{row!, col!}` and produces matrices `U` and `V` such that `aM ≈ U*V`'.
+`aca(M, rank::Int64)`
+
+`aca(M, tol::Float64; [maxrank, rankstart])`
+
+takes a matrix and produces matrices `U` and `V` such that `M ≈ U*V`' to either a prescribed rank (`rank::Int64`) or tolerance (`tol::Float64`).
 
 - `rank`: the maximum allowed rank of the approximation
 
 - `tol`:  the tolerance for the stopping criterion of || M - U*V' || < tol
 
-- `sz`:   a `Tuple{Int64, Int64}` providing the size of M (which may not have a method for size(x::typeof{M}))
+- `maxrank`: when the second argument is `tol::Float64`, `maxrank=s` means that the factorization will terminate when `size(U,2)=s` regardless of whether ||M - U*V'|| < tol`.
 
-The object `M` must implement `ACAFact.{row!, col!}`, which both look like
+- `rankstart`: when the second argument is `tol::Float64`, this routine works by adding chunks of columns at a time and resuming the factorization. `rankstart` dictates the initial guess for the `tol`-rank of `M`. The higher it is, the fewer pauses from heap allocations you are likely to have---but if you overshoot, you will still have to pay the price of discarding unused but pre-allocated rows. I recommend keeping this reasonably low.
 
+
+
+
+You are welcome to provide an arbitrary object `M::MyObject` that is not an `::AbstractMatrix`. The object `M` must implement `ACAFact.{row!, col!}`, which both look like
 ```
-ACAFact.row!(buf, M, j)
+ACAFact.{col!,row!}(buf, M::MyObject, j)
 ```
-
-and populate `buf` with the row (or column) of index `j`. Feel free to write your own methods for your special object.
+and populate `buf` with the row (or column) of index `j`. Additionally, it must implement
+```
+Base.eltype(M::MyObject)
+Base.size(M::MyObject)
+```
+But with those methods, you can pass the object in to `aca` just as you can pass in a standard matrix.
 """
-
 function aca(M, rank::Int64; sz=size(M))
   rank = min(rank, sz[1], sz[2])
   U    = Array{eltype(M)}(undef, sz[1], rank)
