@@ -38,11 +38,18 @@ end
 end
 
 @testset "basic kernel matrix" begin
-  Km = ACAFact.kernelmatrix(collect(pts1), collect(pts2), (x,y)->exp(-abs2(x-y)))
+  Km = kernelmatrix(collect(pts1), collect(pts2), (x,y)->exp(-abs2(x-y)))
   (U1, V1, err1) = aca(Km, 50)
   @test opnorm(K - U1*V1') < 1e-14
   (U2, V2, err2) = aca(Km, 1e-6; rankstart=2)
   @test opnorm(K - U2*V2') < 1e-5
   @test U2 ≈ U1[:,1:size(U2,2)]
+end
+
+@testset "psvd" begin
+  Km = kernelmatrix(collect(pts1), collect(pts2), (x,y)->exp(-abs2(x-y)))
+  M  = Matrix(Km)
+  ps = aca_psvd(Km, 1e-15)
+  @test opnorm(M - Matrix(ps))/opnorm(M) < 1e-13
 end
 

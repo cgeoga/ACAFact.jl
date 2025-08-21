@@ -17,6 +17,7 @@ Base.size(km::KernelMatrix{T,P,F}, j) where{T,P,F} = size(km)[j]
 Base.eltype(km::KernelMatrix{T,P,F}) where{T,P,F} = T
 
 LinearAlgebra.issymmetric(km::KernelMatrix) = (km.x1 == km.x2)
+LinearAlgebra.ishermitian(km::KernelMatrix) = (km.x1 == km.x2)
 
 function ACAFact.col!(buf::AbstractVector{T}, km::KernelMatrix{T,P,F}, j::Int) where{T,P,F}
   length(buf) == size(km, 1) || throw(error("Input buffer not the right size!"))

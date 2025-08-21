@@ -196,3 +196,25 @@ function aca(M, tol::Float64; sz=size(M), maxrank=min(sz[1], sz[2]), rankstart=2
   (Matrix(U), Matrix(V), err)
 end
 
+"""
+`aca_psvd(M, tol_or_rank; kwargs...)`
+
+Computes a partial SVD of a matrix (or an abstract object implementing the necessary methods, see the docstrings for `aca` for details) based on the ACA with given specifications.
+
+- `M`: your matrix or matrix-like object.
+- `tol_or_rank`: if `::Float64`, then this is interpreted as an `rtol`-like parameter. If `::Int64`, then it is a fixed rank. This is the same as the second argument passed to `aca`, so consult those docstrings for details.
+- `kwargs...`: keyword arguments that will be provided to `aca`. See the docstrings for `aca` for details.
+
+This function returns a standard `SVD` object, at least for now.
+"""
+function aca_psvd(M, tol_or_rank; kwargs...)
+  (_U, _V) = aca(M, tol_or_rank; kwargs...)
+  qrU      = qr!(_U)
+  D        = qrU.R*_V'
+  svdD     = svd!(D)
+  U        = qrU.Q*svdD.U
+  mul!(U, qrU.Q, svdD.U)
+  ishermitian(M) && return SVD(U, svdD.S, U')
+  SVD(U, svdD.S, svdD.Vt)
+end
+
