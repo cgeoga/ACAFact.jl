@@ -5,6 +5,12 @@ pts1 = range(0.0, 1.0, length=100)
 pts2 = range(0.0, 1.0, length=110)
 K    = [exp(-abs2(pj - pk)) for pj in pts1, pk in pts2]
 
+@testset "zero matrix" begin
+  Km = kernelmatrix(1:1000, 1:1000, (x,y)->0.0)
+  (U, V) = aca(Km, 1e-15; rankstart=2)
+  @test iszero(size(U, 2))
+end
+
 @testset "out-of-place" begin
   (U1, V1, err1) = aca(K, 50)
   @test opnorm(K - U1*V1') < 1e-14

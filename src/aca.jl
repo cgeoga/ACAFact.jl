@@ -32,15 +32,8 @@ function next_pivot(rbuf, used_ixs)
       ix  = j
     end
   end
-  if iszero(ix)
-    @warn "Could not effectively select a pivot, defaulting to next available index." maxlog=1
-    for t in (used_ixs[1]+1):length(rbuf)
-      in(t, used_ixs) && continue
-      (val, ix) = (rbuf[t], t)
-      break
-    end
-  end
-  (val, ix)
+  iszero(ix) && @warn "Could not effectively select a pivot, defaulting to next available index." maxlog=1
+  (!iszero(ix), val, ix)
 end
 
 row!(buf, M, j) = (buf .= view(M, j, :))
@@ -50,7 +43,7 @@ function initialize_row!(rbuf, M)
   rowj = 1
   row!(rbuf, M, rowj)
   any(isnan, rbuf) && throw(error("NaN found in row $rowj, aborting..."))
-  while iszero(maximum(abs, rbuf)) && rowj < size(U,1)
+  while iszero(maximum(abs, rbuf)) && rowj < size(M,1)
     rowj += 1
     row!(rbuf, M, rowj)
     any(isnan, rbuf) && throw(error("NaN found in row $rowj, aborting..."))
@@ -95,7 +88,8 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
     if isone(l)
       (maxval, rowj) = initialize_row!(rbuf, M)
     else
-      (maxval, rowj) = next_pivot(cbuf, view(rix, 1:l))
+      (success, maxval, rowj) = next_pivot(cbuf, view(rix, 1:l))
+      success || return (l-1, z, err)
       row!(rbuf, M, rowj)
       conj!(rbuf)
     end
@@ -106,8 +100,8 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
       axpy!(-conj(U[rowj,t]), view(V, :, t), rbuf)
     end
     # get the next column index and put that buffer in place:
-    (maxval, colk) = next_pivot(rbuf, view(cix, 1:l))
-    iszero(maxval) && break
+    (success, maxval, colk) = next_pivot(rbuf, view(cix, 1:l))
+    (iszero(maxval) || !success) && return (l-1, z, err)
     cix[l] = colk
     col!(cbuf, M, colk)
     any(isnan, cbuf) && throw(error("NaN found in column $colk, aborting..."))
