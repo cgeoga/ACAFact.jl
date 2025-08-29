@@ -97,12 +97,13 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
     else
       (maxval, rowj) = next_pivot(cbuf, view(rix, 1:l))
       row!(rbuf, M, rowj)
+      conj!(rbuf)
     end
     any(isnan, rbuf) && throw(error("NaN found in row $rowj, aborting..."))
     rix[l] = rowj
     # adjustment:
     for t in 1:(l-1)
-      axpy!(-U[rowj,t], view(V, :, t), rbuf)
+      axpy!(-conj(U[rowj,t]), view(V, :, t), rbuf)
     end
     # get the next column index and put that buffer in place:
     (maxval, colk) = next_pivot(rbuf, view(cix, 1:l))
@@ -113,7 +114,7 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
     # adjustment:
     rbuf ./= maxval
     for t in 1:(l-1)
-      axpy!(-V[colk,t], view(U, :, t), cbuf)
+      axpy!(-conj(V[colk,t]), view(U, :, t), cbuf)
     end
     # add the new row and column:
     view(U, :, l) .= cbuf
@@ -125,12 +126,9 @@ function aca!(M, U, V, tol=0.0; start=1, z=0.0,
     z  += sum(abs2, cbuf)*sum(abs2, rbuf)
     err = sqrt(sum(abs2, cbuf)*sum(abs2, rbuf))/sqrt(z)
     if sqrt(sum(abs2, cbuf)*sum(abs2, rbuf)) < tol*sqrt(z) && l > 1
-      eltype(M) <: Complex && conj!(V)
       return (l, z, err)
     end
   end
-  # if M is complex, then conj! the V:
-  eltype(M) <: Complex && conj!(V)
   (size(U,2), z, err)
 end
 
