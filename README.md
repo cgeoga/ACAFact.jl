@@ -104,3 +104,15 @@ to fully assemble a potentially huge matrix. If you knew the rank of your matrix
 was O(1), for example, that would change the runtime of your code from O(n^2) to
 O(n) basically for free. Not bad!
 
+# Cheap conversions to partial factorizations
+
+This package now also offers simple extension functions `aca_psvd` and `aca_pqr`
+to convert the obtained approximation `K \approx U*V'` into truncated low-rank
+factorizations:
+```julia
+(U, S, Vt) = aca_psvd(K, 1e-12, maxrank=100)
+(Q, R)     = aca_pqr(K,  1e-12, maxrank=100)
+```
+Both of these methods simply compute an ACA and then do manipulations on the
+small matrices to give the more standard-form factorizations.
+

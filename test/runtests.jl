@@ -50,7 +50,17 @@ end
 @testset "psvd" begin
   Km = kernelmatrix(collect(pts1), collect(pts2), (x,y)->exp(-abs2(x-y)))
   M  = Matrix(Km)
-  ps = aca_psvd(Km, 1e-15)
-  @test opnorm(M - Matrix(ps))/opnorm(M) < 1e-13
+  (U, S, Vt) = aca_psvd(Km, 1e-15)
+  @test opnorm(M - U*Diagonal(S)*Vt)/opnorm(M) < 1e-13
+  @test opnorm(U'U    - I) < 1e-13
+  @test opnorm(Vt*Vt' - I) < 1e-13
+end
+
+@testset "pqr" begin
+  Km = kernelmatrix(collect(pts1), collect(pts2), (x,y)->exp(-abs2(x-y)))
+  M  = Matrix(Km)
+  (Q, R) = aca_pqr(Km, 1e-15)
+  @test opnorm(M - Q*R)/opnorm(M) < 1e-13
+  @test opnorm(Q'Q - I) < 1e-13
 end
 
